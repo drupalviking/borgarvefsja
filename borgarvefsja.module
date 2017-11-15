@@ -1,0 +1,132 @@
+<?php
+define('BORGARVEFSJA_API', variable_get('borgarvefsja_api'));
+define('BORGARVEFSJA_MAX_HITS', variable_get('borgarvefsja_max_hits'));
+
+/**
+ * Implements hook_admin().
+ */
+function borgarvefsja_admin() {
+  $form['borgarvefsja_config'] = [
+    '#type' => 'fieldset',
+    '#weight' => 20,
+    '#title' => t('Borgarvefsjá API configuration'),
+    '#description' => t('Application specific configuration of Client keys.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  ];
+
+  $form['borgarvefsja_config']['borgarvefsja_api'] = [
+    '#type' => 'textfield',
+    '#weight' => 5,
+    '#title' =>  t('Street Lookup API'),
+    '#default_value' => variable_get('borgarvefsja_api',
+      'http://borgarvefsja.reykjavik.is/bvsAddressFindUTF8/'),
+    '#description' => t('Path to Street Lookup API.')
+  ];
+
+  $form['borgarvefsja_config']['borgarvefsja_max_hits'] = [
+    '#type' => 'textfield',
+    '#weight' => 10,
+    '#title' => t('Max hits'),
+    '#default_value' => variable_get('borgarvefsja_max_hits', 20),
+    '#description' => t('Number of values to be returned with any result.'),
+  ];
+
+  return system_settings_form($form);
+}
+
+function borgarvefsja_menu() {
+  $items['admin/config/services/borgarvefsja'] = array(
+    'title' => t('Borgarvefsjá config'),
+    'description' => 'Misc settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('borgarvefsja_admin'),
+    'access arguments' => array('administer borgarvefsja settings'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['gata/fletta_upp_gotu_autocomplete_callback'] = array(
+    'page callback' => 'borgarvefsja_street_lookup_autocomplete_callback',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function borgarvefsja_permission() {
+  return array(
+    'administer borgarvefsja settings' => array(
+      'title' => t('Administer Borgarvefsjá Settings'),
+    ),
+  );
+}
+
+function borgarvefsja_street_lookup_autocomplete_callback($string = "") {
+  $matches = [];
+  $uri = BORGARVEFSJA_API . '/?top=' .
+    BORGARVEFSJA_MAX_HITS .
+    '&type=2&Addr=' . rawurlencode($string);
+  $streets = _borgarvefsja_get_query($uri);
+  foreach($streets as $street) {
+    $matches[$street['text']] = $street['text'];
+  }
+
+  drupal_json_output($matches);
+}
+
+/**
+ * Searches Borgarvefsja API
+ *
+ * @param string $address
+ * @return object
+ */
+function borgarvefsja_search_by_address($address = "") {
+  $uri = BORGARVEFSJA_API . '/?top=' .
+    BORGARVEFSJA_MAX_HITS .
+    '&type=2&Addr=' . rawurlencode($address);
+  return _borgarvefsja_get_query($uri);
+}
+
+/**
+ * Sends a GET query to MainManager for specific URL
+ *
+ * @param $uri string
+ *   The fully generated search string
+ * @return object
+ *   Returns a stdClass with the search results or an error message
+ */
+function _borgarvefsja_get_query($uri) {
+  $search_results = null;
+
+  if (!empty($cache)) {
+    $search_results = $cache;
+  }
+  else {
+    $options = array(
+      'method' => 'GET',
+      'timeout' => 3,
+      'headers' => array(
+        'Accept' => 'application/json',
+      ),
+    );
+
+    $search_results = drupal_http_request($uri, $options);
+
+    if (empty($search_results->error)) {
+      $search_results = drupal_json_decode($search_results->data);
+    }
+    else {
+      drupal_set_message(t('The search request resulted in the following error: @error.', array(
+        '@error' => $search_results->error,
+      )));
+
+      return $search_results->error;
+    }
+  }
+
+  return $search_results;
+}
