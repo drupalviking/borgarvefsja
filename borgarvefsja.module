@@ -51,6 +51,12 @@ function borgarvefsja_menu() {
     'access arguments' => array('access content'),
   );
 
+  $items['gata/fa_x_y_hnit_gotu_callback'] = [
+    'page callback' => 'borgarvefsja_search_by_address_callback',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('access content'),
+  ];
+
   return $items;
 }
 
@@ -89,6 +95,19 @@ function borgarvefsja_search_by_address($address = "") {
     BORGARVEFSJA_MAX_HITS .
     '&type=2&Addr=' . rawurlencode($address);
   return _borgarvefsja_get_query($uri);
+}
+
+/**
+ * Searches Borgarvefsja API
+ *
+ * @param string $address
+ * @return object
+ */
+function borgarvefsja_search_by_address_callback($address = "") {
+  $uri = BORGARVEFSJA_API . '/?top=' .
+    BORGARVEFSJA_MAX_HITS .
+    '&type=2&Addr=' . rawurlencode($address);
+  return drupal_json_output(_borgarvefsja_get_query($uri));
 }
 
 /**
