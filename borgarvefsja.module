@@ -6,31 +6,31 @@ define('BORGARVEFSJA_MAX_HITS', variable_get('borgarvefsja_max_hits'));
  * Implements hook_admin().
  */
 function borgarvefsja_admin() {
-  $form['borgarvefsja_config'] = [
+  $form['borgarvefsja_config'] = array(
     '#type' => 'fieldset',
     '#weight' => 20,
     '#title' => t('Borgarvefsjá API configuration'),
     '#description' => t('Application specific configuration of Client keys.'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
-  ];
+  );
 
-  $form['borgarvefsja_config']['borgarvefsja_api'] = [
+  $form['borgarvefsja_config']['borgarvefsja_api'] = array(
     '#type' => 'textfield',
     '#weight' => 5,
     '#title' =>  t('Street Lookup API'),
     '#default_value' => variable_get('borgarvefsja_api',
       'http://borgarvefsja.reykjavik.is/bvsAddressFindUTF8/'),
     '#description' => t('Path to Street Lookup API.')
-  ];
+  );
 
-  $form['borgarvefsja_config']['borgarvefsja_max_hits'] = [
+  $form['borgarvefsja_config']['borgarvefsja_max_hits'] = array(
     '#type' => 'textfield',
     '#weight' => 10,
     '#title' => t('Max hits'),
     '#default_value' => variable_get('borgarvefsja_max_hits', 20),
     '#description' => t('Number of values to be returned with any result.'),
-  ];
+  );
 
   return system_settings_form($form);
 }
@@ -51,11 +51,11 @@ function borgarvefsja_menu() {
     'access arguments' => array('access content'),
   );
 
-  $items['gata/fa_x_y_hnit_gotu_callback'] = [
+  $items['gata/fa_x_y_hnit_gotu_callback'] = array(
     'page callback' => 'borgarvefsja_search_by_address_callback',
     'type' => MENU_CALLBACK,
     'access arguments' => array('access content'),
-  ];
+  );
 
   return $items;
 }
@@ -107,6 +107,7 @@ function borgarvefsja_search_by_address_callback($address = "") {
   $uri = BORGARVEFSJA_API . '/?top=' .
     BORGARVEFSJA_MAX_HITS .
     '&type=2&Addr=' . rawurlencode($address);
+
   return drupal_json_output(_borgarvefsja_get_query($uri));
 }
 
