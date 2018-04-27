@@ -72,7 +72,7 @@ function borgarvefsja_permission() {
 }
 
 function borgarvefsja_street_lookup_autocomplete_callback($string = "") {
-  $matches = [];
+  $matches = array();
   $uri = BORGARVEFSJA_API . '/?top=' .
     BORGARVEFSJA_MAX_HITS .
     '&type=2&Addr=' . rawurlencode($string);
